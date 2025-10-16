@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -19,7 +20,9 @@ func main() {
 		log.Fatalf("failed to get config: %v", err)
 	}
 
+	// Global middlewares
 	r := mux.NewRouter()
+	r.Use(loggingMiddleware)
 
 	// Healthcheck endpoints
 	r.HandleFunc("/ping", handlers.Ping).Methods(http.MethodGet)
@@ -30,4 +33,13 @@ func main() {
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// loggingMiddleware logs method, path, and request duration for each request.
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
+	})
 }

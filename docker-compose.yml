@@ -1,0 +1,84 @@
+services:
+  # -------------------- POSTGRES --------------------
+  postgres:
+    image: arm64v8/postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    platform: linux/arm64/v8
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin_dashboard
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    platform: linux/arm64/v8
+
+  # -------------------- MONGODB --------------------
+  mongo:
+    image: arm64v8/mongo:7
+    container_name: mongo_db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    platform: linux/arm64/v8
+
+  # mongo-express:
+  #   image: mongo-express:latest
+  #   container_name: mongo_express_dashboard
+  #   restart: always
+  #   environment:
+  #     ME_CONFIG_MONGODB_SERVER: mongo
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: "admin"
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: "admin123"
+  #   ports:
+  #     - "8085:8085"
+  #   depends_on:
+  #     - mongo
+  #   platform: linux/arm64/v8
+
+  # -------------------- REDIS --------------------
+  redis:
+    image: arm64v8/redis:7
+    container_name: redis_db
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    platform: linux/arm64/v8
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: redis_commander_dashboard
+    restart: always
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis
+    platform: linux/arm64/v8
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
