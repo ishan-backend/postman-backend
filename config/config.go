@@ -13,12 +13,34 @@ import (
 // Config holds application-wide configuration loaded from YAML.
 type Config struct {
 	Server ServerConfig `yaml:"server"`
+	Mongo  MongoConfig  `yaml:"mongo"`
+	Redis  RedisConfig  `yaml:"redis"`
 }
 
 // ServerConfig groups HTTP server settings.
 type ServerConfig struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
+}
+
+// MongoConfig groups MongoDB connection settings.
+type MongoConfig struct {
+	URI            string `yaml:"uri"`
+	Database       string `yaml:"database"`
+	ConnectTimeout int    `yaml:"connectTimeoutSeconds"` // seconds
+	Username       string `yaml:"username"`
+	Password       string `yaml:"password"`
+	AuthSource     string `yaml:"authSource"`
+}
+
+// RedisConfig groups Redis connection settings.
+type RedisConfig struct {
+	Addr         string `yaml:"addr"`
+	Password     string `yaml:"password"`
+	DB           int    `yaml:"db"`
+	DialTimeout  int    `yaml:"dialTimeoutSeconds"`  // seconds
+	ReadTimeout  int    `yaml:"readTimeoutSeconds"`  // seconds
+	WriteTimeout int    `yaml:"writeTimeoutSeconds"` // seconds
 }
 
 var (

@@ -1,15 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	"github.com/ishan-backend/postman-backend/config"
+	"github.com/ishan-backend/postman-backend/db"
 	"github.com/ishan-backend/postman-backend/handlers"
+	"github.com/ishan-backend/postman-backend/repository"
+	"github.com/ishan-backend/postman-backend/service"
 )
 
 func main() {
@@ -24,14 +31,71 @@ func main() {
 	r := mux.NewRouter()
 	r.Use(loggingMiddleware)
 
+	// Initialize Mongo and repositories
+	mongo, err := db.InitMongo(
+		cfg.Mongo.URI,
+		cfg.Mongo.Database,
+		cfg.Mongo.ConnectTimeout,
+		cfg.Mongo.Username,
+		cfg.Mongo.Password,
+		cfg.Mongo.AuthSource,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize mongo: %v", err)
+	}
+
+	// Initialize Redis
+	_, err = db.InitRedis(
+		cfg.Redis.Addr,
+		cfg.Redis.Password,
+		cfg.Redis.DB,
+		cfg.Redis.DialTimeout,
+		cfg.Redis.ReadTimeout,
+		cfg.Redis.WriteTimeout,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize redis: %v", err)
+	}
+
+	repos := repository.New(mongo.Database, db.GetRedis().Client)
+	services := service.New(repos)
+	api := handlers.New(services)
+
 	// Healthcheck endpoints
-	r.HandleFunc("/ping", handlers.Ping).Methods(http.MethodGet)
-	r.HandleFunc("/health", handlers.Health).Methods(http.MethodGet)
+	r.HandleFunc("/ping", api.Ping).Methods(http.MethodGet)
+	r.HandleFunc("/health", api.Health).Methods(http.MethodGet)
+	r.HandleFunc("/redis-ping", api.RedisPing).Methods(http.MethodGet)
+	r.HandleFunc("/mongo-ping", api.MongoPing).Methods(http.MethodGet)
 
 	addr := cfg.Server.Host + ":" + strconv.Itoa(cfg.Server.Port)
 	log.Printf("starting server on %s", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatalf("server error: %v", err)
+	// Graceful shutdown handling (for DB cleanup)
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	srvErr := make(chan error, 1)
+	go func() {
+		srvErr <- http.ListenAndServe(addr, r)
+	}()
+
+	select {
+	case <-shutdownCtx.Done():
+		// attempt to close DB
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if mongo != nil {
+			_ = mongo.Close(ctx)
+		}
+		// attempt to close Redis
+		if r := db.GetRedis(); r != nil {
+			_ = r.Close()
+		}
+		log.Printf("shutting down")
+		os.Exit(0)
+	case err := <-srvErr:
+		if err != nil {
+			log.Fatalf("server error: %v", err)
+		}
 	}
 }
 

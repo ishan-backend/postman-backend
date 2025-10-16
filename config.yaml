@@ -1,3 +1,17 @@
 server:
   host: "127.0.0.1"
   port: 8080
+mongo:
+  uri: "mongodb://localhost:27017"
+  database: "postman"
+  connectTimeoutSeconds: 10
+  username: "admin"
+  password: "admin123"
+  authSource: "admin"
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  dialTimeoutSeconds: 5
+  readTimeoutSeconds: 3
+  writeTimeoutSeconds: 3
