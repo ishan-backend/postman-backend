@@ -15,12 +15,12 @@ type UserServiceInterface interface {
 
 // UserService implements user business logic.
 type UserService struct {
-	usersRepo repository.UsersRepoInterface
+	UsersRepo repository.UsersRepoInterface
 }
 
 // NewUserService constructs a UserService.
 func NewUserService(repos *repository.Repositories) *UserService {
-	return &UserService{usersRepo: repository.NewUsersRepository(repos)}
+	return &UserService{UsersRepo: repository.NewUsersRepository(repos)}
 }
 
 // BulkCreateUsers validates and forwards to repository.
@@ -28,5 +28,5 @@ func (s *UserService) BulkCreateUsers(ctx context.Context, users []repo.User) ([
 	if len(users) == 0 {
 		return nil, nil
 	}
-	return s.usersRepo.BulkInsert(ctx, users)
+	return s.UsersRepo.BulkInsert(ctx, users)
 }
