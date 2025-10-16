@@ -1,8 +1,9 @@
 server:
   host: "127.0.0.1"
   port: 8080
+  requestTimeoutSeconds: 15
 mongo:
-  uri: "mongodb://localhost:27017"
+  uri: "mongodb://127.0.0.1:27017"
   database: "postman"
   connectTimeoutSeconds: 10
   username: "admin"

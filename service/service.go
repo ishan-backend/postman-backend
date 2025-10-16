@@ -9,12 +9,12 @@ import (
 // Services aggregates all business logic services.
 type Services struct {
 	repos *repository.Repositories
-	// Example in future: Users *UserService
+	Users *UserService
 }
 
 // New creates Services bound to repositories.
 func New(repos *repository.Repositories) *Services {
-	return &Services{repos: repos}
+	return &Services{repos: repos, Users: NewUserService(repos)}
 }
 
 // RedisPing checks connectivity to Redis via repository Redis client.

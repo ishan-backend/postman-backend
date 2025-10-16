@@ -26,10 +26,14 @@ func InitMongo(uri string, database string, connectTimeoutSeconds int, username 
 	if connectTimeoutSeconds <= 0 {
 		connectTimeoutSeconds = 10
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(connectTimeoutSeconds)*time.Second)
+	timeout := time.Duration(connectTimeoutSeconds) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	clientOpts := options.Client().ApplyURI(uri)
+	clientOpts := options.Client().ApplyURI(uri).
+		SetServerSelectionTimeout(timeout).
+		SetConnectTimeout(timeout).
+		SetSocketTimeout(timeout)
 	if username != "" || password != "" {
 		clientOpts.SetAuth(options.Credential{
 			Username:   username,

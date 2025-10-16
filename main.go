@@ -67,15 +67,24 @@ func main() {
 	r.HandleFunc("/redis-ping", api.RedisPing).Methods(http.MethodGet)
 	r.HandleFunc("/mongo-ping", api.MongoPing).Methods(http.MethodGet)
 
+	// Users
+	r.HandleFunc("/users/bulk", api.BulkCreateUsers).Methods(http.MethodPost)
+
 	addr := cfg.Server.Host + ":" + strconv.Itoa(cfg.Server.Port)
 	log.Printf("starting server on %s", addr)
+
+	// Apply request timeout if configured
+	var rootHandler http.Handler = r
+	if cfg.Server.RequestTimeoutSeconds > 0 {
+		rootHandler = http.TimeoutHandler(r, time.Duration(cfg.Server.RequestTimeoutSeconds)*time.Second, "request timeout")
+	}
 	// Graceful shutdown handling (for DB cleanup)
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	srvErr := make(chan error, 1)
 	go func() {
-		srvErr <- http.ListenAndServe(addr, r)
+		srvErr <- http.ListenAndServe(addr, rootHandler)
 	}()
 
 	select {

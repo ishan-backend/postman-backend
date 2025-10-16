@@ -19,8 +19,9 @@ type Config struct {
 
 // ServerConfig groups HTTP server settings.
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host                  string `yaml:"host"`
+	Port                  int    `yaml:"port"`
+	RequestTimeoutSeconds int    `yaml:"requestTimeoutSeconds"` // seconds
 }
 
 // MongoConfig groups MongoDB connection settings.
