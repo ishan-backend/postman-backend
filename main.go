@@ -68,7 +68,9 @@ func main() {
 	r.HandleFunc("/mongo-ping", api.MongoPing).Methods(http.MethodGet)
 
 	// Users
-	r.HandleFunc("/users/bulk", api.BulkCreateUsers).Methods(http.MethodPost)
+	usersRouter := r.PathPrefix("/users").Subrouter()
+	usersRouter.Use(authMiddleware)
+	usersRouter.HandleFunc("/bulk", api.BulkCreateUsers).Methods(http.MethodPost)
 
 	addr := cfg.Server.Host + ":" + strconv.Itoa(cfg.Server.Port)
 	log.Printf("starting server on %s", addr)
@@ -108,11 +110,20 @@ func main() {
 	}
 }
 
-// loggingMiddleware logs method, path, and request duration for each request.
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
