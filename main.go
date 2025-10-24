@@ -72,6 +72,8 @@ func main() {
 	usersRouter.Use(authMiddleware)
 	usersRouter.HandleFunc("/bulk", api.BulkCreateUsers).Methods(http.MethodPost)
 
+	// usersRouter.HandleFunc("/bulk/second", middleware.Chain(http.HandlerFunc(api.BulkCreateUsers), middleware.NewRateLimiter()).Methods(http.MethodPost)
+
 	addr := cfg.Server.Host + ":" + strconv.Itoa(cfg.Server.Port)
 	log.Printf("starting server on %s", addr)
 
